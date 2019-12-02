@@ -4,20 +4,6 @@
 #ifndef STOCHASTIC_H
 #define STOCHASTIC_H
 
-#include <sys/stat.h>
-#include <unistd.h>
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-#pragma GCC diagnostic pop
-#include <Eigen/Eigen>
-#include <functional>
-#include <chrono>
-using namespace Eigen;
-#include <iostream>
-#include <memory>
-#include <cmath>
-#include <vector>
-
 namespace stochastic
 {
     inline double set_uniform_random(double mean, double delta)
@@ -34,13 +20,26 @@ namespace stochastic
         return distribution(generator);
     }
 
+    inline MatrixXd set_normal_random_matrix(int rows, int cols, double mean, double stddev)
+    {
+        MatrixXd M(rows, cols);
+	for(int i = 0; i < rows; i++)
+	{
+	    for(int j = 0; j < cols; j++)
+	    {
+	        M(i,j) = set_normal_random(mean, stddev);
+	    }
+	}
+        return M;
+    }
+
     inline VectorXd mean(MatrixXd Matrix)
     {
         if(Matrix.cols() == 1)
 	{
 	    if(Matrix.rows() == 1)
 	    {
-	        Info << "WARNING: computing mean of a single scalar" << endl;
+	        cout << "WARNING: computing mean of a single scalar" << endl;
 	    }
 	    Matrix.transposeInPlace();
 	}
