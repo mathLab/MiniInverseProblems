@@ -1,0 +1,4 @@
+SOURCE = \
+BayesianTest1D.C \
+
+# sources
