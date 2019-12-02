@@ -60,7 +60,7 @@ class multi_mhmc
             }
         
             acceptanceRatio /= Nmax;
-            Info << "Acceptance ratio = " << acceptanceRatio << endl;
+            cout << "Acceptance ratio = " << acceptanceRatio << endl;
             std::cout << "Mean = " << sampleMean.rightCols(1) << std::endl; 
         };
 };

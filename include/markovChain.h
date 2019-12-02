@@ -19,7 +19,7 @@ class mhmc
 	int Nmax;
 	double initVal;
 	double delta;
-	word propDist;
+	string propDist;
 	VectorXd chain;
 	double acceptanceRatio = 0;
 	MatrixXd sampleMean;
@@ -29,7 +29,7 @@ class mhmc
         {
             intAutocorrTime = 0.5;
             MatrixXd autocovariance = stochastic::autocovariance(chain);
-            Info << autocovariance.rows() << " x " << autocovariance.cols() << endl;
+            cout << autocovariance.rows() << " x " << autocovariance.cols() << endl;
             for(int i = 0; i < Nmax; i++)
             { 
                 intAutocorrTime += (1 - i / Nmax) * autocovariance(0,i);
@@ -57,7 +57,7 @@ class mhmc
                 }
         	else
         	{
-        	    Info << "Unknown proposal distribution, exiting" << endl;
+        	    cout << "Unknown proposal distribution, exiting" << endl;
         	    exit(10);
         	}
         
@@ -89,7 +89,7 @@ class mhmc
             }
         
             acceptanceRatio /= Nmax;
-            Info << "Acceptance ratio = " << acceptanceRatio << endl;
+            cout << "Acceptance ratio = " << acceptanceRatio << endl;
         };
 };
 
