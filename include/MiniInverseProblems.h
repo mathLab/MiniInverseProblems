@@ -22,11 +22,12 @@ using namespace std;
 
 
 #include "M_assert.h"
+#include "EigenStream.h"
+#include "func_min.h"
 #include "stochastic.h"
 #include "statisticalDistribution.h"
 #include "linearSystem.h"
 #include "markovChain.h"
 #include "multiMarkovChain.h"
-#include "EigenStream.h"
 
 #endif // MINI_INVERSE_PROBLEMS_H
