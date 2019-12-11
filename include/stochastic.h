@@ -13,10 +13,22 @@ namespace stochastic
     
     inline double set_normal_random(double mean, double stddev)
     {
-        unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-        std::default_random_engine generator (seed);
-        std::normal_distribution<double> distribution (mean, stddev);
+        std::random_device rd{};
+        std::mt19937 gen{rd()};
+ 
+        std::normal_distribution<> d{mean,stddev};
+	return d(gen);
+        //unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+        //std::default_random_engine generator (seed);
+        //std::normal_distribution<double> distribution (mean, stddev);
 
+        //return distribution(generator);
+    }
+    
+    inline double set_gamma_random(double mean, double stddev)
+    {
+        std::default_random_engine generator;
+        std::gamma_distribution<double> distribution(mean,stddev);
         return distribution(generator);
     }
 
@@ -53,12 +65,33 @@ namespace stochastic
 
     inline MatrixXd covariance(MatrixXd sample)
     {
-        VectorXd mu = stochastic::mean(sample);
-	MatrixXd cov(sample.rows(), sample.rows());
-	int Nobserv = sample.cols();
-	cov = 1 / (Nobserv -1) * (sample - mu * MatrixXd::Ones(1, Nobserv)) * (sample - mu * MatrixXd::Ones(1, Nobserv)).transpose();
+        sample.transposeInPlace();
+        MatrixXd centered = sample.rowwise() - sample.colwise().mean();
+        MatrixXd cov = (centered.adjoint() * centered) / double(sample.rows() - 1);
+	//VectorXd mu = stochastic::mean(sample);
+	//MatrixXd cov(sample.rows(), sample.rows());
+	//int Nobserv = sample.cols();
+	//cov = 1.0 / (Nobserv - 1) * (sample - mu * MatrixXd::Ones(1, Nobserv)) * (sample - mu * MatrixXd::Ones(1, Nobserv)).transpose();
 	return cov;
     }
+
+
+    ////PLIMS Empirical quantiles
+    //// plims(x,p)  calculates p quantiles from columns of x
+    //inline plims(MatrixXd x, VectorXd p)
+    //{
+    //    //if nargin<2
+    //    //%  p = [0.025,0.975];
+    //    //   p = [0.25,0.5,0.75];
+    //    //end
+    //    int n = x.rows();
+    //    int m = x.cols();
+    //    if(n==1)
+    //    {
+    //        n = m;
+    //    }
+    //    y = interp1(sort(x),(n-1)*p+1);
+    //}
 
     //// Normalized autocovariance function
     //inline VectorXd autocovariance(VectorXd chain)
