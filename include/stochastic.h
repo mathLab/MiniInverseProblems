@@ -128,6 +128,7 @@ namespace stochastic
         return autoCov;
     }
 
+    // Compute integrated autocorrelation time using Sokal's filtering
     inline MatrixXd intAutocorrTime(MatrixXd chain)
     {
         if(chain.cols() == 1)
