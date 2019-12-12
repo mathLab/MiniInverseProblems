@@ -22,6 +22,7 @@ using namespace std;
 
 
 #include "M_assert.h"
+#include "erfinv.h"
 #include "EigenStream.h"
 #include "func_min.h"
 #include "stochastic.h"

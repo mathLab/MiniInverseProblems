@@ -18,11 +18,6 @@ namespace stochastic
  
         std::normal_distribution<> d{mean,stddev};
 	return d(gen);
-        //unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-        //std::default_random_engine generator (seed);
-        //std::normal_distribution<double> distribution (mean, stddev);
-
-        //return distribution(generator);
     }
     
     inline double set_gamma_random(double mean, double stddev)
@@ -53,75 +48,67 @@ namespace stochastic
 	    {
 	        cout << "WARNING: computing mean of a single scalar" << endl;
 	    }
-	    Matrix.transposeInPlace();
+	    cout << "WARNING: only one sample. The samples should be on the columns" << endl;
 	}
-        VectorXd mu(Matrix.rows());
-	for(int i = 0; i < Matrix.rows(); i++)
+	return Matrix.transpose().colwise().mean();
+    }
+
+    inline MatrixXd center(MatrixXd sample)
+    {
+        sample.transposeInPlace();
+        return sample.rowwise() - sample.colwise().mean();
+    }
+
+    inline VectorXd stddev(MatrixXd sample)
+    {
+        int N = sample.cols();
+	VectorXd mean = stochastic::mean(sample);
+	VectorXd sigma = VectorXd::Zero(sample.rows());
+
+        for(int i = 0; i < N; i++)
 	{
-	    mu(i) = Matrix.row(i).sum() / Matrix.cols();
+	    VectorXd sS = sample.col(i) - mean;
+	    sigma = sigma.array() + sS.array().square();
 	}
-	return mu;
+	sigma = (sigma.array() / (N - 1)).cwiseSqrt();
+	return sigma;
     }
 
     inline MatrixXd covariance(MatrixXd sample)
     {
-        sample.transposeInPlace();
-        MatrixXd centered = sample.rowwise() - sample.colwise().mean();
+        MatrixXd centered = stochastic::center(sample);
         MatrixXd cov = (centered.adjoint() * centered) / double(sample.rows() - 1);
-	//VectorXd mu = stochastic::mean(sample);
-	//MatrixXd cov(sample.rows(), sample.rows());
-	//int Nobserv = sample.cols();
-	//cov = 1.0 / (Nobserv - 1) * (sample - mu * MatrixXd::Ones(1, Nobserv)) * (sample - mu * MatrixXd::Ones(1, Nobserv)).transpose();
 	return cov;
     }
 
 
-    ////PLIMS Empirical quantiles
-    //// plims(x,p)  calculates p quantiles from columns of x
-    //inline plims(MatrixXd x, VectorXd p)
-    //{
-    //    //if nargin<2
-    //    //%  p = [0.025,0.975];
-    //    //   p = [0.25,0.5,0.75];
-    //    //end
-    //    int n = x.rows();
-    //    int m = x.cols();
-    //    if(n==1)
-    //    {
-    //        n = m;
-    //    }
-    //    y = interp1(sort(x),(n-1)*p+1);
-    //}
+    // Calculates credibility bounds
+    // Returns a matrix with 2 columns. In each column there is one bound
+    inline MatrixXd credibilityBounds(MatrixXd sample, double frac = 0.95)
+    {
+        // Compute the credible region on the mean
+        double Nsigma = sqrt(2) * erfinv(frac);
 
-    //// Normalized autocovariance function
-    //inline VectorXd autocovariance(VectorXd chain)
-    //{
-    //    VectorXd autoCov;
-    //    autoCov.resize(chain.size() - 1);
-    //    double autocov0 = 1.0;
-    //    for(int i = 0; i < autoCov.size(); i++)
-    //    {
-    //        VectorXd tail = chain.tail(chain.size() - i) - VectorXd::Ones(chain.size() - i) * stochastic::mean(chain);
-    //        VectorXd head = chain.head(chain.size() - i) - VectorXd::Ones(chain.size() - i) * stochastic::mean(chain);
-    //        autoCov(i) = 1.0/(chain.size() - 1) * tail.dot(head);
-    //        if(i == 0)
-    //        {
-    //            autocov0 = autoCov(i);
-    //        }
-    //        autoCov(i) /= autocov0;
-    //    }
-    //    return autoCov;
-    //}
+	VectorXd mean = stochastic::mean(sample);
+	VectorXd sigma_mu = stochastic::stddev(sample).array();
+	MatrixXd ret(sample.rows(),2);
+	ret.col(0) = mean - Nsigma * sigma_mu; 
+	ret.col(1) = mean + Nsigma * sigma_mu; 
+	return ret;
+    }
 
     // Normalized autocovariance function
+    // Autocorrelation function
     inline MatrixXd autocovariance(MatrixXd chain)
     {
-        MatrixXd autoCov;
         if(chain.cols() == 1)
 	{
+	    cout << "WARNING: In computing ACF, check if the chain is a row vector" << endl; 
 	    chain.transposeInPlace();
 	}
-        autoCov.resize(chain.rows(), chain.cols() - 1);
+
+	M_Assert(chain.cols() >= 1, "Only one sample, samples should be on the columns of the matrix");
+        MatrixXd autoCov(chain.rows(), chain.cols() - 1);
         double autocov0 = 1.0;
 	for(int row = 0; row < autoCov.rows(); row ++)
 	{
@@ -143,6 +130,11 @@ namespace stochastic
 
     inline MatrixXd intAutocorrTime(MatrixXd chain)
     {
+        if(chain.cols() == 1)
+	{
+	    cout << "WARNING: In computing ACF, check if the chain is a row vector" << endl; 
+	    chain.transposeInPlace();
+	}
         MatrixXd intAutocorrTime = MatrixXd::Ones(chain.rows(),1) * 0.5;
         MatrixXd autocovariance = stochastic::autocovariance(chain);
 	for(int i = 0; i < intAutocorrTime.rows(); i++)
@@ -150,6 +142,11 @@ namespace stochastic
             for(int j = 0; j < autocovariance.cols(); j++)
             {
                 intAutocorrTime(i,0) += (1 - j / chain.cols()) * autocovariance(i,j);
+		if(intAutocorrTime(i,0) < j/6)
+		{
+		    j = autocovariance.cols();
+		    
+		}
             }
 	}
 	return intAutocorrTime;
